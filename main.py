@@ -10,6 +10,7 @@ import numpy as np
 from PIL import ImageTk,Image
 import math
 import nltk
+random.seed(random.random())
 # Define useful parameters
 red_kitchen = "#F2003C"
 cyan_livingroom = "#00B7EB"
@@ -17,10 +18,11 @@ orange_bedroom = "#FF7F00"
 purple_studio = "#B600F2"
 aoi_bathroom = "#232B6C"
 yellow_balcony="#FFFF00"
+bound = "#4B9687"
 size_of_board = 600
 rows = 40
 cols = 40
-DELAY = 200
+DELAY = 10
 snake_initial_length = 1
 symbol_size = (size_of_board / 3 - size_of_board / 8) / 2
 symbol_thickness = 2
@@ -70,7 +72,7 @@ walls=[]
 
 
 boundary_point={"balcony_bedroom":[],"balcony_studio":[],"bedroom_bathroom":[], 
-"bedroom_kitchen":[],"kitchen_studio":[], "diningroom_kitchen":[]}
+"bedroom_kitchen":[],"kitchen_studio":[], "livingroom_kitchen":[]}
 
 knowledge_belong ={"balcony_plants":["balcony"],
 "living_plants":["livingroom"],
@@ -82,7 +84,20 @@ knowledge_belong ={"balcony_plants":["balcony"],
 "studio_chair":["studio"],
 "living_chair":["livingroom"],
 "phone":["studio"],"bread":["kitchen"],
-"snacks":["livingroom"]}
+"snacks":["livingroom"],
+"tv":["livingroom"],
+"toilet":["bathroom"],
+"washstand":["bathroom"],
+"night_table":["bedroom"],
+"sofa":["livingroom"],
+"bay_window":["livingroom"],
+"tea_table":["livingroom"],
+"kitchen_table":["kitchen"],
+"studio_table":["studio"],
+"cooking_bench":["kitchen"],
+"cabinet":["livingroom"],
+"bed":["bedroom"],
+"bath_cabinet":["bathroom"]}
 ground_truth = {"balcony_plants":[(2,4),(2,5),(3,4),(3,5),(23,6),(23,8)],
 "living_plants":[(27,10),(27,11),(28,10),(28,11)],
 "sunglass":[(3,21)],"clothes":[(10,24),(11,24)],
@@ -90,7 +105,13 @@ ground_truth = {"balcony_plants":[(2,4),(2,5),(3,4),(3,5),(23,6),(23,8)],
 "living_chair":[(31,13)],
 "studio_chair":[(21,11),(21,12)],
 "kitchen_chair":[(26,24),(27,24),(29,24),(30,24),(26,28),(27,28),(29,28),(30,28),(32,20)],"bowl":[(26,26)],
-"snacks":[(31,16)],"light":[(36,10)],"phone":[(23,13)],"computer":[(23,11)]}
+"snacks":[(31,16)],"light":[(36,10)],"phone":[(23,13)],"computer":[(23,11)],
+"cooking_bench":[(18,33)],"studio_table":[(21,12)],"kitchen_table":[(26,26)],
+"sofa":[(34,16)],"cabinet":[(24,6)],"tea_table":[(32,16)],"bay_window":[(29,8)],"tv":[(23,15)],
+"bed":[(5,15)],"night_table":[(3,11),(3,20)],"washstand":[(18,26)],"toilet":[(8,28)],"bath_cabinet":[(14,34)]}
+
+furni_points=[(18,33),(21,12),(26,26),(34,16),(24,6),(32,16),(29,8),(23,15),(5,15),(3,11),(3,20),(18,26),(14,34),(8,28)]
+
 
 section =["bedroom","livingroom","kitchen","balcony","studio","bathroom"]
 
@@ -195,6 +216,7 @@ class SnakeAndApple:
             )
 
     def initialize_snake(self):
+       
         self.snake = []
         self.crashed = False
         self.snake_heading = "Right"
@@ -209,26 +231,34 @@ class SnakeAndApple:
             self.snake.append((i+35,35))
 
     def play_again(self):
+        #playagain
         self.canvas.delete("all")
         self.initialize_board()
         self.initialize_snake()
         
+        self.place_balcony(22,6)        
         self.wall_printer(0,0,39,3)
         self.furn_printer(0,0,0,0)
         self.obj_printer(25,25,1,1)
-        #self.sec_printer()
-        #self.predict_section(2,2)        
+        #print(obstacle)
+        #print("************************8")
+        self.sec_printer()   
         for x in obstacle:
            if x in walkable:
                walkable.remove(x)
 
 
-       # print("******************")
-       # print(walkable)
+          
+         
+
+
+
         for e in walkable:
             walk_ranking[e]=0
-      #  print(walk_ranking)
-        #print("*****************")
+      #      self.boundarypoint(e[0],e[1])
+           # self.place_bound(e[0],e[1])
+      #      print(boundary_point)
+      #      print("*****************")
         self.display_snake(mode="complete")
         self.begin_time = time.time()
 
@@ -261,7 +291,7 @@ class SnakeAndApple:
             if e in  walls:
                 count+=1
 
-        return count
+        return count*10000
 
         
         
@@ -269,6 +299,9 @@ class SnakeAndApple:
 
 
     def predict_section(self,x1,y1):
+        #print(obstacle)
+        if (x1,y1) in obstacle:
+            return "obstacles"
         vote_dict ={}
         for e in section:
             vote_dict[e]=0
@@ -278,9 +311,10 @@ class SnakeAndApple:
         for obje in ground_truth.keys():
             for location in ground_truth[obje]:
                 eud_dis=(location[0]-x1)**2+(location[1]-y1)**2
-                
+               # print(x1)
+               # print(y1)
                 for sec in knowledge_belong[obje]:
-                   temp = factor/eud_dis
+                   temp = factor/(eud_dis)
                    temp /= (self.wall_block(location[0],location[1],x1,y1)+1)
                    vote_dict[sec] += temp
         #print(vote_dict)              
@@ -325,7 +359,13 @@ class SnakeAndApple:
         
         
         least_visit = min(temp_dict.values())
-        least_pos = self.get_key(least_visit,temp_dict)
+        pose = []
+        for k,v in temp_dict.items():
+            if v == least_visit:
+               pose.append(k)
+                
+        least_pos = random.choice(pose) 
+        #least_pos = self.get_key(least_visit,temp_dict)
                 
         if down_pos == least_pos:
             next_move = "Down"
@@ -339,16 +379,35 @@ class SnakeAndApple:
     
     def e_distance(self,x1,y1,x2,y2):
        # print(x1,y1,x2,y2)
-        if ((x2-x1)**2+(y2-y1)**2)< 30:
+        if ((x2-x1)**2+(y2-y1)**2)< 10:
             return 1
         return 0 
 
 
-    def bounarypoint(self,x,y):
-        if 
-        
-
- 
+    def boundarypoint(self,x,y):
+        flag = 0
+        four_direct = [(x-1,y),(x+1,y),(x,y-1),(x,y+1)]
+        for e in four_direct:
+            if self.predict_section(e[0],e[1])== "balcony" and self.predict_section(x,y)=="bedroom":
+               boundary_point["balcony_bedroom"].append((x,y))
+               self.place_bound(x,y)
+            if self.predict_section(e[0],e[1])== "balcony" and self.predict_section(x,y)=="studio":
+               boundary_point["balcony_studio"].append((x,y))
+               self.place_bound(x,y)
+            if self.predict_section(e[0],e[1])== "bedroom" and self.predict_section(x,y)=="bathroom":
+               boundary_point["bedroom_bathroom"].append((x,y))
+               self.place_bound(x,y)
+            if self.predict_section(e[0],e[1])== "bedroom" and self.predict_section(x,y)=="kitchen":
+               boundary_point["bedroom_kitchen"].append((x,y))
+               self.place_bound(x,y)
+            if self.predict_section(e[0],e[1])== "kitchen" and self.predict_section(x,y)=="studio":
+               boundary_point["kitchen_studio"].append((x,y))
+               self.place_bound(x,y)
+            if self.predict_section(e[0],e[1])=="livingroom" and self.predict_section(x,y) =="kitchen":
+               boundary_point["livingroom_kitchen"].append((x,y))
+               self.place_bound(x,y)
+              
+     
     def navigate(self,loc1,loc2):
         horiz_move = "h"
         verti_move = "v"
@@ -398,6 +457,17 @@ class SnakeAndApple:
         return 0
         
 
+#    def agent_navigate(self,x,y,a,b):
+        
+        
+    def hit_wall(self,gx,gy,ix,iy):
+        
+        small_x = min(gx,ix)
+        small_y = min(gy,iy)        
+        big_x = max(gx,ix)
+        big_y = max(gy,iy)
+        l = [(x,y) for x in range(small_x,big_x) for y in range(small_y,big_y)]
+        
 
 
 
@@ -405,26 +475,40 @@ class SnakeAndApple:
         for e in ground_truth.values():
             for sub_e in e:
                  if self.e_distance(self.snake[0][0],self.snake[0][1],sub_e[0],sub_e[1]) == 1:
-                    self.memory[self.get_key(e,ground_truth)]= sub_e 
+                    item_name = self.get_key(e,ground_truth)
+                    if item_name not in self.memory.keys():
+                        self.memory[item_name]=[sub_e]
+                    elif sub_e not in self.memory[item_name]:
+                        self.memory[self.get_key(e,ground_truth)].append(sub_e) 
                    # print("object"+self.get_key(e,ground_truth)+" observe")
                    # print(self.memory)
-   
+    def explore_covered(self):
+        cont = sum(x == 0 for x in walk_ranking.values())
+        print("percent")
+        print(cont)
+        print(len(walk_ranking.values()))
 
     def mainloop(self):
         index = 0 
 
         while True:
             #index +=1
-            if (index == 5000):
-                  break
+            if (index == 500):
+                  self.explore_covered()
+                  print(self.memory)
+                 # self.sec_printer()
+                 # print("lolll")
+                  break              
             self.window.update()
             
             if self.begin:
                  index +=1
                 
                  walk_ranking[(self.snake[0][0],self.snake[0][1])]+=1
+                # self.boundarypoint(self.snake[0][0],self.snake[0][1])
                  self.observe()
                  self.last_key =self.movement()
+                 #self.place_balcony(self.snake[0][0],self.snake[0][1])
                  #if (index == 600):
                                 
                      #self.navigate(35,35)
@@ -432,6 +516,7 @@ class SnakeAndApple:
                   #   break
                  #print("step:"+str(index)) 
                  self.window.after(DELAY,self.update_snake(self.last_key))
+                 #print(boundary_point)
        # print(walk_ranking) 
            #     if not self.crashed:
             #        self.window.after(DELAY, self.update_snake(self.last_key))
@@ -555,7 +640,18 @@ class SnakeAndApple:
         )
         return x,y
 
-
+    def place_bound(self,x,y):
+        self.apple_cell =(x,y)
+        row_h = int(size_of_board / rows)
+        col_w = int(size_of_board / cols)
+        x1 = self.apple_cell[0] * row_h
+        y1 = self.apple_cell[1] * col_w
+        x2 = x1 + row_h
+        y2 = y1 + col_w
+        self.apple_obj = self.canvas.create_rectangle(
+            x1, y1, x2, y2, fill=bound, outline=BLUE_COLOR,
+        )
+        return x,y
 
     def place_bedroom (self,x,y):
         self.apple_cell =(x,y)
