@@ -10,6 +10,7 @@ import numpy as np
 from PIL import ImageTk,Image
 import math
 import nltk
+import matplotlib.pyplot as plt
 random.seed(random.random())
 # Define useful parameters
 red_kitchen = "#F2003C"
@@ -107,7 +108,7 @@ ground_truth = {"balcony_plants":[(2,4),(2,5),(3,4),(3,5),(23,6),(23,8)],
 "kitchen_chair":[(26,24),(27,24),(29,24),(30,24),(26,28),(27,28),(29,28),(30,28),(32,20)],"bowl":[(26,26)],
 "snacks":[(31,16)],"light":[(36,10)],"phone":[(23,13)],"computer":[(23,11)],
 "cooking_bench":[(18,33)],"studio_table":[(21,12)],"kitchen_table":[(26,26)],
-"sofa":[(34,16)],"cabinet":[(24,6)],"tea_table":[(32,16)],"bay_window":[(29,8)],"tv":[(23,15)],
+"sofa":[(34,16)],"cabinet":[(24,6)],"tea_table":[(32,16)],"bay_window":[(29,8)],"tv":[(25,15)],
 "bed":[(5,15)],"night_table":[(3,11),(3,20)],"washstand":[(18,26)],"toilet":[(8,28)],"bath_cabinet":[(14,34)]}
 
 furni_points=[(18,33),(21,12),(26,26),(34,16),(24,6),(32,16),(29,8),(23,15),(5,15),(3,11),(3,20),(18,26),(14,34),(8,28)]
@@ -242,7 +243,7 @@ class SnakeAndApple:
         self.obj_printer(25,25,1,1)
         #print(obstacle)
         #print("************************8")
-        self.sec_printer()   
+       # self.sec_printer()   
         for x in obstacle:
            if x in walkable:
                walkable.remove(x)
@@ -308,8 +309,8 @@ class SnakeAndApple:
 
         list_values =[]
         factor = 100
-        for obje in ground_truth.keys():
-            for location in ground_truth[obje]:
+        for obje in self.memory.keys():
+            for location in self.memory[obje]:
                 eud_dis=(location[0]-x1)**2+(location[1]-y1)**2
                # print(x1)
                # print(y1)
@@ -408,54 +409,7 @@ class SnakeAndApple:
                self.place_bound(x,y)
               
      
-    def navigate(self,loc1,loc2):
-        horiz_move = "h"
-        verti_move = "v"
-        case = 10
-        if loc1>=self.snake[0][0] and loc2 >= self.snake[0][1]:
-           case = 1
-        elif loc1>=self.snake[0][0] and loc2 <= self.snake[0][1]:
-           case = 2
-        elif loc1<=self.snake[0][0] and loc2 >= self.snake[0][1]:
-           case = 3
-        elif loc1<=self.snake[0][0] and loc2 <= self.snake[0][1]:
-           case = 4
-        else:
-           case = 10
-
-               
-        while (self.snake[0][0]!= loc1 ):
-             if case ==1 or case ==2:
-                horiz_move = "Right"
-                if (self.snake[0][0]+1,self.snake[0][1]) in obstacle:
-                     
-                      self.window.after(DELAY,self.update_snake("Down" if case ==1 else "Up"))    
-             else:
-                horiz_move = "Left"
-                if (self.snake[0][0]-1,self.snake[0][1]) in obstacle:
-                      
-                      self.window.after(DELAY,self.update_snake("Down" if case ==3 else "Up"))
-
-             self.window.after(DELAY,self.update_snake(horiz_move))
-                
-       
-        while (self.snake[0][1]!= loc2 ):
-             if case ==1 or case ==3:
-                verti_move = "Down"
-                if (self.snake[0][0],self.snake[0][1]+1) in obstacle:
-
-                      self.window.after(DELAY,self.update_snake("Right" if case ==1 else "Left"))
-
-             else:
-                verti_move = "Up"
-                if (self.snake[0][0],self.snake[0][1]-1) in obstacle:
-
-                      self.window.after(DELAY,self.update_snake("Right" if case ==2 else "Left"))
-
-             self.window.after(DELAY,self.update_snake(verti_move))
-        
-        return 0
-        
+  
 
 #    def agent_navigate(self,x,y,a,b):
         
@@ -483,22 +437,26 @@ class SnakeAndApple:
                    # print("object"+self.get_key(e,ground_truth)+" observe")
                    # print(self.memory)
     def explore_covered(self):
-        cont = sum(x == 0 for x in walk_ranking.values())
+        cont = sum(x != 0 for x in walk_ranking.values())
         print("percent")
-        print(cont)
-        print(len(walk_ranking.values()))
+        
+        percent = cont/len(walk_ranking.values())
+        print(percent)
+        return percent
+        
 
-    def mainloop(self):
+    def mainloop(self,inp):
         index = 0 
-
+        
         while True:
             #index +=1
-            if (index == 500):
-                  self.explore_covered()
-                  print(self.memory)
-                 # self.sec_printer()
-                 # print("lolll")
-                  break              
+            if (index == inp):
+                 # self.explore_covered()
+                  #print(self.memory)
+                 self.sec_printer()
+                 print("lolll")
+                 
+                             
             self.window.update()
             
             if self.begin:
@@ -826,5 +784,73 @@ class SnakeAndApple:
                 self.last_key = key_pressed
 
 
-game_instance = SnakeAndApple()
-game_instance.mainloop()
+#game_instance = SnakeAndApple()
+#game_instance.mainloop(1400)
+xx = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+mas = [50,200,400,600,800,1000,1200,1400]
+sec_50 = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+sec_200 = [2,4,3,1,1,1,2,2,2,2,3,2,3,3,2,2,2,2,2,2]
+sec_400 = [3,3,4,4,6,3,5,2,2,5,4,4,5,3,6,4,4,2,3,3]
+sec_600 = [2,5,4,5,6,6,6,3,4,5,4,4,5,5,3,5,3,4,5,5]
+sec_800 = [5,6,6,4,6,5,4,6,5,6,5,5,6,5,4,3,4,5,4,6]
+sec_1000 = [6,4,6,6,6,6,6,6,5,6,6,6,6,5,5,4,6,6,6,6]
+sec_1200 = [5,6,6,6,6,5,6,6,4,6,6,6,6,6,4,6,6,6,5,6]
+sec_1400 = [6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6]
+
+plt.scatter(xx,sec_50)
+plt.scatter(xx,sec_200)
+plt.scatter(xx,sec_400)
+plt.scatter(xx,sec_600)
+plt.scatter(xx,sec_800)
+plt.scatter(xx,sec_1000)
+plt.scatter(xx,sec_1200)
+plt.scatter(xx,sec_1400)
+plt.plot(xx,sec_50,label ="max_steps =50")
+plt.plot(xx,sec_200,label ="max_steps =200")
+plt.plot(xx,sec_400,label ="max_steps =400")
+plt.plot(xx,sec_600,label ="max_steps =600")
+plt.plot(xx,sec_800,label ="max_steps =800")
+plt.plot(xx,sec_1000, label ="max_steps =1000")
+plt.plot(xx,sec_1200,label ="max_steps =1200")
+plt.plot(xx,sec_1400,label ="max_steps =1400")
+
+plt.ylabel('Section Segmentation')
+plt.xlabel('Trials')
+plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
+plt.tight_layout()
+plt.show()
+
+'''
+max_step =[]
+per = []
+
+
+
+x = 1
+
+while x < 3000:
+  print("max step"+str(x))
+  avg_per = 0
+  
+  for i in range(0,5):
+     game_instance.mainloop(x)    
+     if(i == 4):
+          per.append(avg_per/4)
+          max_step.append(x)
+    
+     avg_per += game_instance.explore_covered()
+     for e in walk_ranking.keys():
+         walk_ranking[e]=0
+     
+
+  x += 50
+  #game_instance.mainloop()
+
+
+plt.plot(max_step,per,'g^')
+
+plt.ylabel('perception accuracy')
+plt.xlabel('max steps')
+plt.show()
+'''
+
